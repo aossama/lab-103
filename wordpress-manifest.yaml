@@ -1,0 +1,75 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - image: mysql
+        name: mysql
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: wp-secret
+                key: password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wp-secret
+type: Opaque
+data:
+  password: MWYyZDFlMmU2N2Rm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wp-service
+  labels:
+    run: wp-service
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    run: wp-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  selector:
+    matchLabels:
+      run: my-nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: my-nginx
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress
+        ports:
+        - containerPort: 443
+        - containerPort: 80
